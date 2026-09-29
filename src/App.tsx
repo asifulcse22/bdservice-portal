@@ -38,6 +38,10 @@ export default function App() {
   });
 
   const [balance, setBalance] = useState<number>(() => {
+    const active = localAuth.getCurrentUser();
+    if (active && typeof active.balance === 'number' && !isNaN(active.balance)) {
+      return active.balance;
+    }
     const saved = localStorage.getItem('citizen_wallet_balance');
     return saved ? parseFloat(saved) : 0;
   });
@@ -216,8 +220,9 @@ export default function App() {
         const user = localAuth.getCurrentUser();
         if (user) {
           setCurrentUser({ ...user, isGuest: false });
-          if (typeof user.balance === 'number') {
+          if (typeof user.balance === 'number' && !isNaN(user.balance)) {
             setBalance(user.balance);
+            localStorage.setItem('citizen_wallet_balance', user.balance.toString());
           }
           const txs = await localAuth.getTransactions(user.uid);
           setTransactions(txs);
@@ -285,7 +290,11 @@ export default function App() {
         });
         if (response.ok) {
           const data = await response.json();
-          setBalance(data.balance);
+          const updatedBalance = Number(data.balance);
+          setBalance(updatedBalance);
+          localAuth.updateBalance(currentUser.uid, updatedBalance);
+          localStorage.setItem('citizen_wallet_balance', updatedBalance.toString());
+          setCurrentUser(prev => ({ ...prev, balance: updatedBalance }));
           const txs = await localAuth.getTransactions(currentUser.uid);
           setTransactions(txs);
           triggerToast('অর্ডার সফল হয়েছে', `${amount} ৳ সফলভাবে কর্তন করা হয়েছে।`);
@@ -296,7 +305,11 @@ export default function App() {
       // গেস্ট মোড / লোকাল স্টেট আপডেট
       const newBal = Math.max(0, balance - amount);
       setBalance(newBal);
+      if (currentUser?.uid && !currentUser.isGuest) {
+        localAuth.updateBalance(currentUser.uid, newBal);
+      }
       localStorage.setItem('citizen_wallet_balance', newBal.toString());
+      setCurrentUser(prev => ({ ...prev, balance: newBal }));
       setTransactions(prev => [
         {
           id: 'TX-' + Math.floor(100000 + Math.random() * 900000),
@@ -333,7 +346,11 @@ export default function App() {
         });
         if (response.ok) {
           const data = await response.json();
-          setBalance(data.balance);
+          const updatedBalance = Number(data.balance);
+          setBalance(updatedBalance);
+          localAuth.updateBalance(currentUser.uid, updatedBalance);
+          localStorage.setItem('citizen_wallet_balance', updatedBalance.toString());
+          setCurrentUser(prev => ({ ...prev, balance: updatedBalance }));
           const txs = await localAuth.getTransactions(currentUser.uid);
           setTransactions(txs);
           triggerToast('ডিপোজিট সফল', `৳ ${amount} আপনার ওয়ালেটে সফলভাবে জমা হয়েছে!`);
@@ -344,7 +361,11 @@ export default function App() {
       // লোকাল ওয়ালেট আপডেট
       const newBal = balance + amount;
       setBalance(newBal);
+      if (currentUser?.uid && !currentUser.isGuest) {
+        localAuth.updateBalance(currentUser.uid, newBal);
+      }
       localStorage.setItem('citizen_wallet_balance', newBal.toString());
+      setCurrentUser(prev => ({ ...prev, balance: newBal }));
       setTransactions(prev => [
         {
           id: trxId || ('TX-' + Math.floor(100000 + Math.random() * 900000)),
@@ -366,28 +387,73 @@ export default function App() {
 
   const onWithdraw = async (amount: number, method: PaymentMethod, accountNo: string): Promise<boolean> => {
     if (balance < amount) return false;
+
+    try {
+      if (currentUser.uid && !currentUser.uid.startsWith('CITIZEN-')) {
+        const response = await fetch('/api/transactions/withdraw', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: currentUser.uid,
+            amount,
+            method,
+            accountNo
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const updatedBalance = Number(data.balance);
+          setBalance(updatedBalance);
+          localAuth.updateBalance(currentUser.uid, updatedBalance);
+          localStorage.setItem('citizen_wallet_balance', updatedBalance.toString());
+          setCurrentUser(prev => ({ ...prev, balance: updatedBalance }));
+          const txs = await localAuth.getTransactions(currentUser.uid);
+          setTransactions(txs);
+          triggerToast('উইথড্র রিকোয়েস্ট গৃহীত', `৳ ${amount} এর পে-আউট রিকোয়েস্ট জমা হয়েছে (${accountNo})`);
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
     const newBal = balance - amount;
     setBalance(newBal);
+    if (currentUser?.uid && !currentUser.isGuest) {
+      localAuth.updateBalance(currentUser.uid, newBal);
+    }
     localStorage.setItem('citizen_wallet_balance', newBal.toString());
+    setCurrentUser(prev => ({ ...prev, balance: newBal }));
     triggerToast('উইথড্র রিকোয়েস্ট গৃহীত', `৳ ${amount} এর পে-আউট রিকোয়েস্ট জমা হয়েছে (${accountNo})`);
     return true;
   };
 
   // Auth Success Callback
-  const handleAuthSuccess = (user: any) => {
-    setCurrentUser({
+  const handleAuthSuccess = async (user: any) => {
+    const userBalance = typeof user.balance === 'number' && !isNaN(user.balance) ? user.balance : balance;
+    const activeUser = {
       uid: user.uid || 'USR-' + Math.floor(100000 + Math.random() * 900000),
-      email: user.email,
-      displayName: user.displayName || user.name || user.email,
-      balance: typeof user.balance === 'number' ? user.balance : balance,
+      email: user.email || user.phone || '',
+      phone: user.phone || '',
+      displayName: user.displayName || user.name || user.email || user.phone || 'নাগরিক ব্যবহারকারী',
+      balance: userBalance,
       role: user.role || 'citizen',
       isGuest: false
-    });
-    if (typeof user.balance === 'number') {
-      setBalance(user.balance);
-    }
+    };
+
+    setCurrentUser(activeUser);
+    setBalance(userBalance);
+    localAuth.updateBalance(activeUser.uid, userBalance);
+    localStorage.setItem('citizen_wallet_balance', userBalance.toString());
     setIsAuthModalOpen(false);
-    triggerToast('স্বাগতম', `${user.displayName || user.name || user.email}, আপনার একাউন্ট সফলভাবে সক্রিয় হয়েছে!`);
+    triggerToast('স্বাগতম', `${activeUser.displayName}, আপনার একাউন্ট সফলভাবে সক্রিয় হয়েছে!`);
+
+    try {
+      const txs = await localAuth.getTransactions(activeUser.uid);
+      setTransactions(txs);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Filter Services Logic (Safely checking title, banglaTitle, titleEn, description)
@@ -608,6 +674,7 @@ export default function App() {
                       isGuest: true
                     });
                     setBalance(0);
+                    setTransactions([]);
                     localStorage.removeItem('citizen_wallet_balance');
                     triggerToast('লগআউট সম্পন্ন', 'আপনি সফলভাবে লগআউট হয়েছেন।');
                   }}

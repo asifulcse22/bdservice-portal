@@ -6,7 +6,7 @@ import { createServer as createViteServer } from "vite";
 
 const { Pool } = pg;
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
 
@@ -60,16 +60,20 @@ function getPool() {
     return null;
   }
   if (!pool) {
+    // Strip channel_binding=require if present as it sometimes causes pg driver timeouts on some networks
+    const cleanConnectionString = process.env.DATABASE_URL.replace("&channel_binding=require", "").replace("?channel_binding=require&", "?");
+
     const config: any = {
-      connectionString: process.env.DATABASE_URL,
-      connectionTimeoutMillis: 3500, // ৫ সেকেন্ডের বেশি আটকে থাকবে না (Port 5432 হ্যাং হওয়া প্রতিরোধ করে)
-      idleTimeoutMillis: 10000,
+      connectionString: cleanConnectionString,
+      connectionTimeoutMillis: 5000,
+      idleTimeoutMillis: 15000,
     };
 
     if (
-      process.env.DATABASE_URL.includes("neon.tech") ||
-      process.env.DATABASE_URL.includes("cockroachlabs") ||
-      process.env.DATABASE_URL.includes("render.com")
+      cleanConnectionString.includes("neon.tech") ||
+      cleanConnectionString.includes("cockroachlabs") ||
+      cleanConnectionString.includes("render.com") ||
+      cleanConnectionString.includes("sslmode=require")
     ) {
       config.ssl = { rejectUnauthorized: false };
     }
@@ -79,7 +83,6 @@ function getPool() {
     // Prevent uncaught errors from crashing Node.js
     pool.on("error", (err) => {
       console.warn("⚠️ Neon Database background pool notice:", err.message);
-      isDbOnline = false;
     });
   }
   return pool;
@@ -162,10 +165,11 @@ async function initDb() {
 app.get("/api/db-status", async (req, res) => {
   const isConfigured = !!process.env.DATABASE_URL;
   let connectionStable = false;
+  const p = getPool();
 
-  if (isConfigured && pool) {
+  if (isConfigured && p) {
     try {
-      const testRes = await pool.query("SELECT NOW()");
+      const testRes = await p.query("SELECT NOW()");
       connectionStable = !!testRes.rows.length;
       isDbOnline = connectionStable;
     } catch (e) {
@@ -186,61 +190,68 @@ app.get("/api/db-status", async (req, res) => {
   });
 });
 
-// Authentication endpoints
+// Authentication endpoints (Supports Email OR Phone in single field)
 app.post("/api/auth/register", async (req, res) => {
-  const { email, phone, name, password } = req.body;
-  const emailKey = email ? email.trim().toLowerCase() : "";
-  const phoneVal = phone ? phone.trim() : null;
+  const { email, phone, identifier, name, password } = req.body;
+  const rawInput = (identifier || email || phone || "").trim();
 
-  if (!emailKey) {
-    return res.status(400).json({ error: "ইমেইল প্রদান করা আবশ্যক। (Email is required.)" });
+  if (!rawInput) {
+    return res.status(400).json({ error: "ইমেইল অথবা মোবাইল নম্বর প্রদান করা আবশ্যক।" });
   }
+
+  const isEmailInput = rawInput.includes("@");
+  const phoneVal = phone ? phone.trim() : (!isEmailInput ? rawInput : null);
+  const emailKey = isEmailInput
+    ? rawInput.toLowerCase()
+    : (email && email.includes("@") ? email.trim().toLowerCase() : `${rawInput}@citizen.gov.bd`);
+
+  const displayName = (name && name.trim()) ? name.trim() : (isEmailInput ? emailKey.split("@")[0] : rawInput);
 
   const p = getPool();
 
-  // Try PostgreSQL if online
-  if (isDbOnline && p) {
+  // Try PostgreSQL if configured
+  if (p) {
     try {
       const duplicateEmail = await p.query("SELECT uid FROM users WHERE email = $1", [emailKey]);
       if (duplicateEmail.rows.length > 0) {
-        return res.status(400).json({ error: "ইমেইলটি ইতিপূর্বে নিবন্ধিত হয়েছে। (This email is already registered.)" });
+        return res.status(400).json({ error: "এই ইমেইল বা নম্বরটি ইতিপূর্বে নিবন্ধিত হয়েছে।" });
       }
 
       if (phoneVal) {
         const duplicatePhone = await p.query("SELECT uid FROM users WHERE phone = $1", [phoneVal]);
         if (duplicatePhone.rows.length > 0) {
-          return res.status(400).json({ error: "মোবাইল নম্বরটি ইতিপূর্বে নিবন্ধিত হয়েছে। (This phone number is already registered.)" });
+          return res.status(400).json({ error: "মোবাইল নম্বরটি ইতিপূর্বে নিবন্ধিত হয়েছে।" });
         }
       }
 
       const uid = "USR-" + Math.floor(100000 + Math.random() * 900000);
       await p.query(
         "INSERT INTO users (uid, email, phone, display_name, balance, role, password) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-        [uid, emailKey, phoneVal, name || emailKey.split("@")[0], 0.0, "citizen", password]
+        [uid, emailKey, phoneVal, displayName, 0.0, "citizen", password]
       );
 
+      isDbOnline = true;
       return res.json({
         uid,
         email: emailKey,
         phone: phoneVal,
-        displayName: name || emailKey.split("@")[0],
+        displayName,
         balance: 0.0,
         role: "citizen"
       });
     } catch (err: any) {
       console.warn("⚠️ DB Register Failed, falling back to memory:", err.message);
       isDbOnline = false;
-      // Fall through to memory fallback
     }
   }
 
   // Memory Fallback Mode
   for (const [, u] of memoryUsers) {
     if (u.email === emailKey) {
-      return res.status(400).json({ error: "ইমেইলটি ইতিপূর্বে নিবন্ধিত হয়েছে। (This email is already registered.)" });
+      return res.status(400).json({ error: "ইমেইলটি ইতিপূর্বে নিবন্ধিত হয়েছে।" });
     }
     if (phoneVal && u.phone === phoneVal) {
-      return res.status(400).json({ error: "মোবাইল নম্বরটি ইতিপূর্বে নিবন্ধিত হয়েছে। (This phone number is already registered.)" });
+      return res.status(400).json({ error: "মোবাইল নম্বরটি ইতিপূর্বে নিবন্ধিত হয়েছে।" });
     }
   }
 
@@ -249,8 +260,8 @@ app.post("/api/auth/register", async (req, res) => {
     uid,
     email: emailKey,
     phone: phoneVal,
-    display_name: name || emailKey.split("@")[0],
-    balance: 0.00, // Real balance starts strictly at 0.00 (no demo balance)
+    display_name: displayName,
+    balance: 0.00,
     role: "citizen",
     password,
     created_at: new Date().toISOString()
@@ -273,16 +284,21 @@ app.post("/api/auth/login", async (req, res) => {
     return res.status(400).json({ error: "ইমেইল বা মোবাইল নম্বর প্রদান করুন।" });
   }
   const cleanId = email.trim().toLowerCase();
+  const syntheticEmail = `${cleanId}@citizen.gov.bd`;
   const p = getPool();
 
-  if (isDbOnline && p) {
+  if (p) {
     try {
-      const result = await p.query("SELECT * FROM users WHERE email = $1 OR phone = $1", [cleanId]);
+      const result = await p.query(
+        "SELECT * FROM users WHERE email = $1 OR phone = $1 OR email = $2",
+        [cleanId, syntheticEmail]
+      );
       if (result.rows.length > 0) {
         const user = result.rows[0];
         if (user.password !== password) {
           return res.status(400).json({ error: "ভুল ইমেইল/মোবাইল নম্বর অথবা পাসওয়ার্ড।" });
         }
+        isDbOnline = true;
         return res.json({
           uid: user.uid,
           email: user.email,
@@ -301,14 +317,13 @@ app.post("/api/auth/login", async (req, res) => {
   // Memory Fallback
   let matchedUser: MemoryUser | null = null;
   for (const [, u] of memoryUsers) {
-    if (u.email === cleanId || u.phone === cleanId) {
+    if (u.email === cleanId || u.phone === cleanId || u.email === syntheticEmail) {
       matchedUser = u;
       break;
     }
   }
 
   if (!matchedUser || matchedUser.password !== password) {
-    // If not found in memory, let demo user login
     if (cleanId === "demo@citizen.gov.bd" || password === "password123") {
       matchedUser = memoryUsers.get("demo@citizen.gov.bd")!;
     } else {
@@ -330,6 +345,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
   res.setHeader("Content-Type", "application/json");
   const identifier = (req.body.identifier || req.body.email || req.body.phone || "").trim().toLowerCase();
   const newPassword = (req.body.newPassword || req.body.password || "").trim();
+  const syntheticEmail = `${identifier}@citizen.gov.bd`;
 
   if (!identifier) {
     return res.status(400).json({ error: "ইমেইল বা মোবাইল নম্বর প্রদান করুন।" });
@@ -340,12 +356,16 @@ app.post("/api/auth/reset-password", async (req, res) => {
 
   const p = getPool();
 
-  if (isDbOnline && p) {
+  if (p) {
     try {
-      const result = await p.query("SELECT uid FROM users WHERE email = $1 OR phone = $1", [identifier]);
+      const result = await p.query(
+        "SELECT uid FROM users WHERE email = $1 OR phone = $1 OR email = $2",
+        [identifier, syntheticEmail]
+      );
       if (result.rows.length > 0) {
         const uid = result.rows[0].uid;
         await p.query("UPDATE users SET password = $1 WHERE uid = $2", [newPassword, uid]);
+        isDbOnline = true;
         return res.json({ success: true, message: "পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে।" });
       }
     } catch (err: any) {
@@ -357,7 +377,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
   // Memory Fallback
   let found = false;
   for (const [, u] of memoryUsers) {
-    if (u.email === identifier || u.phone === identifier) {
+    if (u.email === identifier || u.phone === identifier || u.email === syntheticEmail) {
       u.password = newPassword;
       found = true;
       break;
@@ -368,11 +388,10 @@ app.post("/api/auth/reset-password", async (req, res) => {
     return res.json({ success: true, message: "পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে।" });
   }
 
-  // If user doesn't exist in memory yet, auto-create them so the user is never blocked
   const uid = "USR-" + Math.floor(100000 + Math.random() * 900000);
   const newUser: MemoryUser = {
     uid,
-    email: identifier.includes("@") ? identifier : `${identifier}@citizen.portal`,
+    email: identifier.includes("@") ? identifier : syntheticEmail,
     phone: identifier.includes("@") ? null : identifier,
     display_name: identifier.split("@")[0],
     balance: 0.0,
@@ -388,14 +407,15 @@ app.post("/api/auth/reset-password", async (req, res) => {
   });
 });
 
-// Reset user balance to 0 or specific amount
+// Sync or update user balance
 app.post("/api/user/reset-balance", async (req, res) => {
   const { uid, newBalance } = req.body;
   const targetBal = typeof newBalance === "number" ? newBalance : 0.00;
   const p = getPool();
-  if (isDbOnline && p && uid) {
+  if (p && uid) {
     try {
       await p.query("UPDATE users SET balance = $1 WHERE uid = $2 OR email = $2", [targetBal, uid]);
+      isDbOnline = true;
     } catch {}
   }
   for (const [, u] of memoryUsers) {
@@ -411,12 +431,13 @@ app.get("/api/transactions", async (req, res) => {
   const { uid } = req.query;
   const p = getPool();
 
-  if (isDbOnline && p) {
+  if (p) {
     try {
       const result = await p.query(
         'SELECT id, type, service_name as "serviceName", info, amount, method, trx_id as "trxId", account_no as "accountNo", status, timestamp FROM transactions WHERE uid = $1 ORDER BY timestamp DESC LIMIT 50',
         [uid]
       );
+      isDbOnline = true;
       return res.json(
         result.rows.map((item) => ({
           ...item,
@@ -446,12 +467,12 @@ app.get("/api/transactions", async (req, res) => {
   res.json(filtered);
 });
 
-// User profile
+// User profile (Never overwrites existing balance with 0 if user is missing in memory)
 app.get("/api/user-profile", async (req, res) => {
   const { uid } = req.query;
   const p = getPool();
 
-  if (isDbOnline && p) {
+  if (p && uid) {
     try {
       const result = await p.query(
         'SELECT uid, email, phone, display_name as "displayName", balance, role FROM users WHERE uid = $1',
@@ -459,26 +480,10 @@ app.get("/api/user-profile", async (req, res) => {
       );
       if (result.rows.length > 0) {
         const user = result.rows[0];
+        isDbOnline = true;
         return res.json({
           ...user,
           balance: parseFloat(user.balance)
-        });
-      } else if (uid) {
-        // Auto-create user in Neon if missing so session is never disconnected
-        const cleanUid = String(uid);
-        await p.query(
-          `INSERT INTO users (uid, email, display_name, balance, role, password)
-           VALUES ($1, $2, $3, $4, $5, $6)
-           ON CONFLICT (uid) DO NOTHING`,
-          [cleanUid, `${cleanUid.toLowerCase()}@citizen.gov.bd`, "নাগরিক ব্যবহারকারী", 0.00, "citizen", "password123"]
-        );
-        return res.json({
-          uid: cleanUid,
-          email: `${cleanUid.toLowerCase()}@citizen.gov.bd`,
-          phone: null,
-          displayName: "নাগরিক ব্যবহারকারী",
-          balance: 0.00,
-          role: "citizen"
         });
       }
     } catch (err) {
@@ -500,16 +505,8 @@ app.get("/api/user-profile", async (req, res) => {
     }
   }
 
-  // Default demo user fallback
-  const demo = memoryUsers.get("demo@citizen.gov.bd")!;
-  res.json({
-    uid: demo.uid,
-    email: demo.email,
-    phone: demo.phone,
-    displayName: demo.display_name,
-    balance: demo.balance,
-    role: demo.role
-  });
+  // Return 404 if user not found on server yet, so client keeps its valid local balance
+  return res.status(404).json({ error: "User profile not synced on server yet" });
 });
 
 // Perform deposits
@@ -521,10 +518,9 @@ app.post("/api/transactions/deposit", async (req, res) => {
   }
 
   const p = getPool();
-  if (isDbOnline && p) {
+  if (p) {
     try {
       const targetUid = uid || "USR-100001";
-      // Ensure user exists first
       const checkUsr = await p.query("SELECT balance FROM users WHERE uid = $1", [targetUid]);
       if (checkUsr.rows.length === 0) {
         await p.query(
@@ -542,6 +538,7 @@ app.post("/api/transactions/deposit", async (req, res) => {
         [id, targetUid, "deposit", amountVal, method, trxId, "Completed", new Date().toLocaleString("bn-BD")]
       );
       const latestUser = await p.query('SELECT uid, email, display_name as "displayName", balance, role FROM users WHERE uid = $1', [targetUid]);
+      isDbOnline = true;
       return res.json({
         success: true,
         balance: parseFloat(latestUser.rows[0].balance)
@@ -552,15 +549,26 @@ app.post("/api/transactions/deposit", async (req, res) => {
   }
 
   // Memory Fallback
+  const targetUid = uid || "USR-100001";
   let targetUser: MemoryUser | null = null;
   for (const [, u] of memoryUsers) {
-    if (u.uid === uid) {
+    if (u.uid === targetUid) {
       targetUser = u;
       break;
     }
   }
   if (!targetUser) {
-    targetUser = memoryUsers.get("demo@citizen.gov.bd")!;
+    targetUser = {
+      uid: targetUid,
+      email: `${targetUid.toLowerCase()}@citizen.gov.bd`,
+      phone: null,
+      display_name: "নাগরিক ব্যবহারকারী",
+      balance: 0.00,
+      role: "citizen",
+      password: "password123",
+      created_at: new Date().toISOString()
+    };
+    memoryUsers.set(targetUser.email, targetUser);
   }
 
   targetUser.balance += amountVal;
@@ -588,14 +596,13 @@ app.post("/api/services/deduct", async (req, res) => {
   const amountVal = parseFloat(amount) || 0;
   const p = getPool();
 
-  if (isDbOnline && p) {
+  if (p) {
     try {
       const targetUid = uid || "USR-100001";
       const checkUsr = await p.query("SELECT balance FROM users WHERE uid = $1", [targetUid]);
       let currentBalance = 0;
 
       if (checkUsr.rows.length === 0) {
-        // যদি ব্যবহারকারী ডাটাবেজে না পাওয়া যায়, তাৎক্ষণিক ইউজার তৈরি করা হবে
         await p.query(
           `INSERT INTO users (uid, email, display_name, balance, role, password) 
            VALUES ($1, $2, $3, $4, $5, $6) 
@@ -619,6 +626,7 @@ app.post("/api/services/deduct", async (req, res) => {
       );
 
       const latestUser = await p.query('SELECT uid, email, display_name as "displayName", balance, role FROM users WHERE uid = $1', [targetUid]);
+      isDbOnline = true;
       return res.json({
         success: true,
         orderId: id,
@@ -631,9 +639,10 @@ app.post("/api/services/deduct", async (req, res) => {
   }
 
   // Memory Fallback
+  const targetUid = uid || "USR-100001";
   let targetUser: MemoryUser | null = null;
   for (const [, u] of memoryUsers) {
-    if (u.uid === uid) {
+    if (u.uid === targetUid) {
       targetUser = u;
       break;
     }
@@ -676,7 +685,6 @@ async function startServer() {
     console.log("ℹ️ Server running with dynamic demo fallback (awaiting DATABASE_URL).");
   }
 
-  // Vite integration middleware
   if (process.env.NODE_ENV !== "production") {
     console.log("Running in development environment mode...");
     const vite = await createViteServer({

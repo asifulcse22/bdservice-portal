@@ -38,10 +38,9 @@ export interface AuthScreenProps {
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onAuthSuccess, triggerToast, onCancel }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>('login');
   
-  // Form fields
+  // Form fields (email state holds either Email OR Mobile Number in single box)
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -51,7 +50,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onAuthSuccess
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Login handler
+  // Login handler (Email OR Mobile Number)
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -91,28 +90,31 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onAuthSuccess
     }
   };
 
-  // Registration handler
+  // Registration handler (Single field for Email OR Mobile Number)
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
 
+    const identifier = email.trim();
+
     if (!name.trim()) {
       setErrorMessage('আপনার পূর্ণ নাম লিখুন।');
       return;
     }
-    if (!phone.trim()) {
-      setErrorMessage('১১-সংখ্যার সচল মোবাইল নম্বর দিন।');
+    if (!identifier) {
+      setErrorMessage('অনুগ্রহ করে আপনার ইমেইল অথবা সচল মোবাইল নম্বর দিন।');
       return;
     }
-    if (!/^01[3-9]\d{8}$/.test(phone.trim())) {
-      setErrorMessage('সঠিক বাংলাদেশি মোবাইল নম্বর লিখুন (যেমন: 01712345678)।');
+
+    const isEmail = identifier.includes('@');
+    const isPhone = /^01[3-9]\d{8}$/.test(identifier);
+
+    if (!isEmail && !isPhone) {
+      setErrorMessage('সঠিক ইমেইল অ্যাড্রেস (যেমন: name@mail.com) অথবা ১১-সংখ্যার মোবাইল নম্বর (যেমন: 01712345678) লিখুন।');
       return;
     }
-    if (!email.trim()) {
-      setErrorMessage('একটি বৈধ ইমেইল অ্যাড্রেস প্রদান করুন।');
-      return;
-    }
+
     if (password.length < 6) {
       setErrorMessage('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
       return;
@@ -124,7 +126,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onAuthSuccess
 
     setIsLoading(true);
     try {
-      const user = await localAuth.register(email.trim(), phone.trim(), name.trim(), password);
+      const emailToPass = isEmail ? identifier : `${identifier}@citizen.gov.bd`;
+      const phoneToPass = isPhone ? identifier : '';
+
+      const user = await localAuth.register(emailToPass, phoneToPass, name.trim(), password);
       setSuccessMessage('রেজিস্ট্রেশন সফল হয়েছে! স্বাগতম।');
       if (triggerToast) {
         triggerToast('রেজিস্ট্রেশন সম্পন্ন', `স্বাগতম ${user.displayName}! আপনার অ্যাকাউন্ট তৈরি হয়েছে।`);
@@ -346,7 +351,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onAuthSuccess
         </form>
       )}
 
-      {/* ================= REGISTER FORM ================= */}
+      {/* ================= REGISTER FORM (একটি ইনপুট ফিল্ডেই ইমেইল বা মোবাইল নম্বর) ================= */}
       {activeTab === 'register' && (
         <form onSubmit={handleRegister} className="space-y-3.5">
           <div>
@@ -370,37 +375,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onAuthSuccess
 
           <div>
             <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1 pl-1">
-              মোবাইল নম্বর (১১ ডিজিট)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                <Smartphone size={16} />
-              </span>
-              <input
-                type="tel"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="01XXXXXXXXX"
-                className="w-full bg-slate-50 border border-slate-200 hover:border-purple-300 focus:border-purple-600 rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-purple-100 transition-all font-sans"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1 pl-1">
-              ইমেইল অ্যাড্রেস
+              ইমেইল অথবা মোবাইল নম্বর
             </label>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
                 <Mail size={16} />
               </span>
               <input
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
+                placeholder="example@mail.com অথবা 01XXXXXXXXX"
                 className="w-full bg-slate-50 border border-slate-200 hover:border-purple-300 focus:border-purple-600 rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-purple-100 transition-all font-sans"
               />
             </div>

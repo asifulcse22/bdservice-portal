@@ -23,6 +23,27 @@ export const SYSTEM_SERVICES: ServiceDefinition[] = [
     inputPlaceholder: 'জন্ম সনদ অনুযায়ী নাম লিখুন',
   },
 
+  {
+    id: 'new-nid-card',
+    title: 'New NID Card Registration',
+    banglaTitle: 'নতুন আইডি কার্ড',
+    titleEn: 'NEW NID CARD REGISTRATION',
+    category: 'nid',
+    fee: 3000,
+    price: 3000,
+    popular: true,
+    isPopular: true,
+    tag: 'NID নিবন্ধন • নতুন কার্ড',
+    deliveryTime: '৩-৫ দিন সময়',
+    processingTime: '৩-৫ দিন সময়',
+    description: 'নতুন জাতীয় পরিচয়পত্র (NID কার্ড) নিবন্ধন ও উত্তোলনের অফিশিয়াল আবেদন',
+    icon: '🪪',
+    iconType: 'credit-card',
+    color: 'bg-emerald-600',
+    inputLabel: 'আবেদনকারীর পূর্ণ নাম ও মোবাইল নম্বর',
+    inputPlaceholder: 'আবেদনকারীর নাম (বাংলা ও ইংরেজি) এবং সচল মোবাইল নম্বর দিন',
+  },
+
   // ─────────────────────────────────────────────
   // 🪪 NID সেবা ও আইডি কার্ড সংশোধন
   // ─────────────────────────────────────────────

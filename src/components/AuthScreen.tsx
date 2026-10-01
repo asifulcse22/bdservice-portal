@@ -407,8 +407,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onAuthSuccess
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="কমপক্ষে ৬ অক্ষর"
-                  className="w-full bg-slate-50 border border-slate-200 hover:border-purple-300 focus:border-purple-600 rounded-xl py-2.5 pl-9 pr-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-purple-100 transition-all font-sans"
+                  className="w-full bg-slate-50 border border-slate-200 hover:border-purple-300 focus:border-purple-600 rounded-xl py-2.5 pl-9 pr-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-purple-100 transition-all"
                 />
+
+                 <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+
               </div>
             </div>
 
@@ -426,8 +435,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onAuthSuccess
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="পুনরায় পাসওয়ার্ড"
-                  className="w-full bg-slate-50 border border-slate-200 hover:border-purple-300 focus:border-purple-600 rounded-xl py-2.5 pl-9 pr-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-purple-100 transition-all font-sans"
+                  className="w-full bg-slate-50 border border-slate-200 hover:border-purple-300 focus:border-purple-600 rounded-xl py-2.5 pl-9 pr-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-purple-100 transition-all "
                 />
+                <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+
               </div>
             </div>
           </div>

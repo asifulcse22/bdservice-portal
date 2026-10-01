@@ -115,6 +115,49 @@ function getOfficialFormSchema(service: ServiceDefinition): OfficialFormSchema {
     };
   }
 
+  // ৫.৫ নতুন ভোটার আবেদন (ফরম-২) ও নতুন আইডি কার্ড নিবন্ধন
+  if (
+    id === 'new-voter' ||
+    id === 'new-voter-registration' ||
+    id === 'new-nid-card' ||
+    id === 'new-nid' ||
+    service.banglaTitle?.includes('নতুন ভোটার') ||
+    service.banglaTitle?.includes('নতুন আইডি')
+  ) {
+    return {
+      department: 'বাংলাদেশ নির্বাচন কমিশন • ভোটার নিবন্ধন শাখা (ফরম-২)',
+      formCode: 'EC-FORM-2-NEW-VOTER',
+      notice: 'নির্বাচন কমিশনের অফিশিয়াল ফরম-২ অনুযায়ী ১৭ ডিজিটের অনলাইন জন্ম সনদ ও পিতা-মাতার এনআইডি তথ্যের সাথে হুবহু মিল রেখে ফরমটি পূরণ করুন।',
+      deliveryTime: service.deliveryTime || '২৪-৭২ ঘণ্টা (অনলাইন ফরম-২ ও নিবন্ধন স্লিপ)',
+      fields: [
+        { id: 'nameBangla', label: '১. আবেদনকারীর নাম (বাংলায় - জন্ম সনদ অনুযায়ী)', placeholder: 'যেমন: মোঃ আরিফুল ইসলাম', type: 'text', required: true, halfWidth: true },
+        { id: 'nameEnglish', label: '২. আবেদনকারীর নাম (ইংরেজিতে - CAPITAL LETTER)', placeholder: 'e.g. MD ARIFUL ISLAM', type: 'text', required: true, halfWidth: true },
+        { id: 'dob', label: '৩. জন্ম তারিখ (Date of Birth - সনদ অনুযায়ী)', placeholder: 'DD/MM/YYYY (যেমন: 15/05/2004)', type: 'text', required: true, halfWidth: true },
+        { id: 'brnNo', label: '৪. ১৭ সংখ্যার অনলাইন জন্ম নিবন্ধন নম্বর (BRN)', placeholder: '17-Digit Birth Registration No', type: 'text', required: true, halfWidth: true },
+        { id: 'gender', label: '৫. লিঙ্গ (Gender)', placeholder: 'নির্বাচন করুন', type: 'select', options: ['পুরুষ (Male)', 'মহিলা (Female)', 'তৃতীয় লিঙ্গ (Third Gender)'], required: true, halfWidth: true },
+        { id: 'bloodGroup', label: '৬. রক্তের গ্রুপ (Blood Group)', placeholder: 'নির্বাচন করুন', type: 'select', options: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-', 'জানা নেই (Unknown)'], required: true, halfWidth: true },
+        { id: 'birthDistrict', label: '৭. জন্মস্থান (জেলা ও দেশ)', placeholder: 'যেমন: ঢাকা, বাংলাদেশ', type: 'text', required: true, halfWidth: true },
+        { id: 'religion', label: '৮. ধর্ম (Religion)', placeholder: 'নির্বাচন করুন', type: 'select', options: ['ইসলাম (Islam)', 'হিন্দু (Hinduism)', 'বৌদ্ধ (Buddhism)', 'খ্রিস্টান (Christianity)', 'অন্যান্য'], required: true, halfWidth: true },
+        { id: 'fatherName', label: '৯. পিতার নাম (বাংলা ও ইংরেজিতে - NID অনুযায়ী)', placeholder: 'পিতার নাম বাংলায় ও ইংরেজিতে লিখুন', type: 'text', required: true, halfWidth: true },
+        { id: 'fatherNid', label: '১০. পিতার জাতীয় পরিচয়পত্র (NID) নম্বর', placeholder: '১০/১৩/১৭ ডিজিটের NID (মৃত হলে "মৃত - সন" লিখুন)', type: 'text', required: true, halfWidth: true },
+        { id: 'motherName', label: '১১. মাতার নাম (বাংলা ও ইংরেজিতে - NID অনুযায়ী)', placeholder: 'মাতার নাম বাংলায় ও ইংরেজিতে লিখুন', type: 'text', required: true, halfWidth: true },
+        { id: 'motherNid', label: '১২. মাতার জাতীয় পরিচয়পত্র (NID) নম্বর', placeholder: '১০/১৩/১৭ ডিজিটের NID (মৃত হলে "মৃত - সন" লিখুন)', type: 'text', required: true, halfWidth: true },
+        { id: 'maritalStatus', label: '১৩. বৈবাহিক অবস্থা (Marital Status)', placeholder: 'নির্বাচন করুন', type: 'select', options: ['অবিবাহিত (Unmarried)', 'বিবাহিত (Married)', 'তালাকপ্রাপ্ত (Divorced)', 'বিধবা / বিপত্নীক'], required: true, halfWidth: true },
+        { id: 'spouseInfo', label: '১৪. স্বামী/স্ত্রীর নাম ও NID নম্বর (বিবাহিত হলে)', placeholder: 'বিবাহিত হলে স্বামী/স্ত্রীর নাম ও NID লিখুন', type: 'text', required: false, halfWidth: true },
+        { id: 'education', label: '১৫. শিক্ষাগত যোগ্যতা (Educational Qualification)', placeholder: 'নির্বাচন করুন', type: 'select', options: ['পঞ্চম শ্রেণি / পিইসি', 'অষ্টম শ্রেণি / জেএসসি', 'এসএসসি / দাখিল / সমমান', 'এইচএসসি / আলিম / সমমান', 'স্নাতক / অনার্স / সমমান', 'স্নাতকোত্তর / মাস্টার্স', 'অন্যান্য / স্বাক্ষরজ্ঞান সম্পন্ন'], required: true, halfWidth: true },
+        { id: 'occupation', label: '১৬. পেশা (Occupation)', placeholder: 'নির্বাচন করুন', type: 'select', options: ['ছাত্র / ছাত্রী (Student)', 'বেসরকারি চাকরি (Private Service)', 'সরকারি চাকরি (Govt. Service)', 'ব্যবসা (Business)', 'গৃহিণী (Housewife)', 'কৃষি (Agriculture)', 'প্রবাসী (Expatriate)', 'বেকার / অন্যান্য'], required: true, halfWidth: true },
+        { id: 'voterMobile', label: '১৭. আবেদনকারীর সচল মোবাইল নম্বর (OTP ও মেসেজের জন্য)', placeholder: '01XXXXXXXXX (নিজের বা পরিবারের সচল নম্বর)', type: 'tel', required: true },
+        { id: 'presentAddress', label: '১৮. বর্তমান ঠিকানা / ভোটার এলাকা (বিভাগ, জেলা, উপজেলা/থানা, ইউনিয়ন/ওয়ার্ড নং, গ্রাম/মহল্লা, বাসা/হোল্ডিং ও পোস্ট কোড)', placeholder: 'বাসা/হোল্ডিং নং, গ্রাম/রাস্তা, ওয়ার্ড নং, ইউনিয়ন/পৌরসভা, ডাকঘর ও পোস্ট কোড, উপজেলা/থানা, জেলা', type: 'textarea', required: true },
+        { id: 'permanentAddress', label: '১৯. স্থায়ী ঠিকানা (বর্তমান ঠিকানার একই হলে "একই" লিখুন অথবা পূর্ণ ঠিকানা লিখুন)', placeholder: 'স্থায়ী ঠিকানার গ্রাম/মহল্লা, ওয়ার্ড, ইউনিয়ন, ডাকঘর, উপজেলা ও জেলা', type: 'textarea', required: true },
+        { id: 'birthCertFile', label: '২০. ডিজিটাল জন্ম নিবন্ধন সনদ (১৭ ডিজিট অনলাইন কপি)', placeholder: 'অনলাইন জন্ম নিবন্ধন সনদের স্পষ্ট ছবি বা PDF আপলোড করুন', type: 'file', required: true, halfWidth: true },
+        { id: 'parentsNidFile', label: '২১. পিতা ও মাতার NID কার্ডের কপি', placeholder: 'পিতা ও মাতার আইডি কার্ডের ছবি বা PDF আপলোড করুন', type: 'file', required: true, halfWidth: true },
+        { id: 'educationCertFile', label: '২২. শিক্ষাগত সনদ (SSC/JSC/PEC - যদি থাকে)', placeholder: 'সার্টিফিকেট বা রেজিস্ট্রেশন কার্ডের কপি আপলোড করুন (ঐচ্ছিক)', type: 'file', required: false, halfWidth: true },
+        { id: 'addressProofFile', label: '২৩. নাগরিকত্ব সনদ ও বিদ্যুৎ বিল / হোল্ডিং ট্যাক্স রসিদ', placeholder: 'চেয়ারম্যান/কাউন্সিলর সনদ বা বিদ্যুৎ বিলের কপি আপলোড করুন', type: 'file', required: true, halfWidth: true },
+        { id: 'photoSignFile', label: '২৪. আবেদনকারীর পাসপোর্ট সাইজ ছবি ও স্বাক্ষর (ঐচ্ছিক)', placeholder: 'পাসপোর্ট সাইজ ছবি বা স্বাক্ষরের ছবি আপলোড করুন', type: 'file', required: false },
+      ]
+    };
+  }
+
   // ৬. আইডি কার্ড সংশোধন ও ঠিকানা পরিবর্তন (সকল সংশোধন সেবা)
   if (
     (id.includes('correction') && id.startsWith('nid')) ||

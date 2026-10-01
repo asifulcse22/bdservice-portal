@@ -1,6 +1,28 @@
 import { ServiceDefinition } from './types';
 
 export const SYSTEM_SERVICES: ServiceDefinition[] = [
+
+  {
+    id: 'new-voter',
+    title: 'New Voter Registration (Form-2)',
+    banglaTitle: 'নতুন ভোটার আবেদন (ফরম-২)',
+    titleEn: 'NEW VOTER REGISTRATION (FORM-2)',
+    category: 'nid',
+    fee: 0,
+    price: 0,
+    popular: true,
+    isPopular: true,
+    tag: 'EC FORM-2 • নতুন ভোটার',
+    deliveryTime: '২৪-৭২ ঘণ্টা (অনলাইন ফরম-২ ও স্লিপ)',
+    processingTime: '২৪-৭২ ঘণ্টা',
+    description: 'বাংলাদেশ নির্বাচন কমিশনের অফিশিয়াল ফরম-২ অনুযায়ী নতুন ভোটার ও এনআইডি নিবন্ধনের পূর্ণাঙ্গ আবেদন',
+    icon: '🗳️',
+    iconType: 'credit-card',
+    color: 'bg-purple-600',
+    inputLabel: 'আবেদনকারীর নাম (বাংলা ও ইংরেজি)',
+    inputPlaceholder: 'জন্ম সনদ অনুযায়ী নাম লিখুন',
+  },
+
   // ─────────────────────────────────────────────
   // 🪪 NID সেবা ও আইডি কার্ড সংশোধন
   // ─────────────────────────────────────────────

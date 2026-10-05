@@ -106,7 +106,7 @@ function getOfficialFormSchema(service: ServiceDefinition): OfficialFormSchema {
       fields: [
         { id: 'nidNo', label: 'স্মার্ট NID / জাতীয় পরিচয়পত্র নম্বর', placeholder: '১০ বা ১৭ ডিজিটের NID নম্বর দিন', type: 'text', required: true, halfWidth: true },
         { id: 'dob', label: 'জন্ম তারিখ (DD/MM/YYYY)', placeholder: 'DD/MM/YYYY', type: 'text', required: true, halfWidth: true },
-        { id: 'nameBangla', label: 'পূর্ণ নাম (বাংলা ও ইংরেজিতে)', placeholder: 'যেমন: মোঃ রফিকুল ইসলাম / MD RAFIQUL ISLAM', type: 'text', required: true },
+        { id: 'nameBangla', label: 'পূর্ণ নাম (বাংলা ও ইংরেজিতে)', placeholder: '', type: 'text', required: true },
         { id: 'parentsName', label: 'পিতা ও মাতার নাম', placeholder: 'পিতার নাম / মাতার নাম', type: 'text', required: true },
         { id: 'bloodGroup', label: 'রক্তের গ্রুপ (Blood Group)', placeholder: 'নির্বাচন করুন', type: 'select', options: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-', 'জানা নেই'], required: true, halfWidth: true },
         { id: 'birthPlace', label: 'জন্মস্থান (জেলা)', placeholder: 'যেমন: DHAKA / ঢাকা', type: 'text', required: true, halfWidth: true },
@@ -130,8 +130,8 @@ function getOfficialFormSchema(service: ServiceDefinition): OfficialFormSchema {
       notice: 'নির্বাচন কমিশনের অফিশিয়াল ফরম-২ অনুযায়ী ১৭ ডিজিটের অনলাইন জন্ম সনদ ও পিতা-মাতার এনআইডি তথ্যের সাথে হুবহু মিল রেখে ফরমটি পূরণ করুন।',
       deliveryTime: service.deliveryTime || '২৪-৭২ ঘণ্টা (অনলাইন ফরম-২ ও নিবন্ধন স্লিপ)',
       fields: [
-        { id: 'nameBangla', label: '১. আবেদনকারীর নাম (বাংলায় - জন্ম সনদ অনুযায়ী)', placeholder: 'যেমন: মোঃ আরিফুল ইসলাম', type: 'text', required: true, halfWidth: true },
-        { id: 'nameEnglish', label: '২. আবেদনকারীর নাম (ইংরেজিতে - CAPITAL LETTER)', placeholder: 'e.g. MD ARIFUL ISLAM', type: 'text', required: true, halfWidth: true },
+        { id: 'nameBangla', label: '১. আবেদনকারীর নাম (বাংলায় - জন্ম সনদ অনুযায়ী)', placeholder: '', type: 'text', required: true, halfWidth: true },
+        { id: 'nameEnglish', label: '২. আবেদনকারীর নাম (ইংরেজিতে - CAPITAL LETTER)', placeholder: '', type: 'text', required: true, halfWidth: true },
         { id: 'dob', label: '৩. জন্ম তারিখ (Date of Birth - সনদ অনুযায়ী)', placeholder: 'DD/MM/YYYY (যেমন: 15/05/2004)', type: 'text', required: true, halfWidth: true },
         { id: 'brnNo', label: '৪. ১৭ সংখ্যার অনলাইন জন্ম নিবন্ধন নম্বর (BRN)', placeholder: '17-Digit Birth Registration No', type: 'text', required: true, halfWidth: true },
         { id: 'gender', label: '৫. লিঙ্গ (Gender)', placeholder: 'নির্বাচন করুন', type: 'select', options: ['পুরুষ (Male)', 'মহিলা (Female)', 'তৃতীয় লিঙ্গ (Third Gender)'], required: true, halfWidth: true },

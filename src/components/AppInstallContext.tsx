@@ -56,15 +56,15 @@ export function AppInstallProvider({ children }: { children: React.ReactNode }) 
       {children}
 
       {showModal && !isStandalone && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-2xl bg-white p-5 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-700 text-white font-bold">
-                  ন
+                  বিডি
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-purple-950">নাগরিক সেবা মোবাইল অ্যাপ</h3>
+                  <h3 className="text-base font-bold text-purple-950">বিডি সার্ভিস মোবাইল অ্যাপ</h3>
                   <p className="text-xs text-gray-500">Android (.APK) ও iPhone (iOS)</p>
                 </div>
               </div>
@@ -103,7 +103,7 @@ export function AppInstallProvider({ children }: { children: React.ReactNode }) 
                 <a
                   href={APK_URL}
                   download={APK_DOWNLOAD_NAME}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3.5 text-center font-bold text-white shadow-md hover:bg-orange-600 transition"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3.5 text-center font-bold text-white shadow-md hover:bg-orange-600 transition break-words"
                 >
                   ⬇️ সরাসরি APK ডাউনলোড করুন (.apk)
                 </a>
@@ -115,7 +115,7 @@ export function AppInstallProvider({ children }: { children: React.ReactNode }) 
                     ⚡ APK ছাড়াই ১-ক্লিকে ইনস্টল করুন
                   </button>
                 )}
-                <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-600 space-y-1 border border-gray-100">
+                <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-600 space-y-1 border border-gray-100 break-words">
                   <p>১. ডাউনলোড হওয়া <strong>{APK_DOWNLOAD_NAME}</strong> ফাইলে ট্যাপ করে <strong>Install</strong> করুন।</p>
                   <p>২. "Install Unknown Apps" পারমিশন চাইলে Allow করে দিন।</p>
                   <p>৩. অ্যাপ ওপেন করে আপনার একাউন্টে লগইন বা রেজিস্ট্রেশন করুন।</p>

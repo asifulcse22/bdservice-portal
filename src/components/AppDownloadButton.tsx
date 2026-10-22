@@ -15,12 +15,12 @@ export default function AppDownloadButton({ variant = 'header' }: { variant?: Va
     banner:
       'inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-xs shadow-md transition cursor-pointer',
     floating:
-      'fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-700 to-fuchsia-600 px-5 py-3 text-sm font-bold text-white shadow-xl hover:scale-105 transition-transform cursor-pointer border border-white/20',
+      'fixed bottom-5 right-4 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full bg-gradient-to-r from-purple-700 to-fuchsia-600 px-4 py-3 text-xs font-bold text-white shadow-xl active:scale-95 transition-transform cursor-pointer border border-white/20',
   };
 
   return (
     <button type="button" onClick={openModal} className={styles[variant]}>
-      <span>📲 অ্যাপ ডাউনলোড (APK / iOS)</span>
+      <span className="truncate">📲 অ্যাপ ডাউনলোড (APK / iOS)</span>
     </button>
   );
 }

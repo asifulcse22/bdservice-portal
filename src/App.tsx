@@ -11,6 +11,7 @@ import {
   Wallet, ArrowRight, AlertTriangle, UserCheck, LogIn, X
 } from 'lucide-react';
 import * as Icons from 'lucide-react';
+import AppDownloadButton from './components/AppDownloadButton';
 
 // Default এবং Named Export উভয়ের সাথে কম্প্যাটিবল
 const WalletGate = WalletGateComponent || NamedWalletGate;
@@ -477,7 +478,7 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-purple-100 via-pink-50 to-purple-50 text-gray-800 font-sans pb-16 antialiased relative">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-tr from-purple-100 via-pink-50 to-purple-50 text-gray-800 font-sans pb-16 antialiased relative">
       {/* Ambient Blur Sprites */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-300/30 rounded-full blur-3xl -z-10 pointer-events-none"></div>
       <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-pink-300/25 rounded-full blur-3xl -z-10 pointer-events-none"></div>
@@ -605,6 +606,8 @@ export default function App() {
               </svg>
               <span>WhatsApp এ মেসেজ দিন</span>
             </a>
+
+             <AppDownloadButton variant="header" />
  
             {/* 💳 Wallet Desk Button */}
             <div className="flex items-center gap-2">
@@ -1301,6 +1304,7 @@ export default function App() {
                   </svg>
                   <span>WhatsApp এ মেসেজ দিন</span>
                 </a>
+                <AppDownloadButton variant="footer" />
               </div>
             </div>
 
@@ -1317,6 +1321,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+      <AppDownloadButton variant="floating" />
     </div>
   );
 }

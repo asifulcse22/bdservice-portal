@@ -178,3 +178,15 @@ html, body, #root {
   background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(255,122,182,0.12));
   color: var(--app-accent-mid) !important;
 }
+
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  max-width: 100vw;
+  overflow-x: hidden;
+}

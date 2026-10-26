@@ -56,7 +56,7 @@ export function WalletGate({ balance, transactions, onAddMoney, onWithdraw, onRe
 
   // Merchants numbers simulation
   const MERCHANT_NUMBERS = {
-    bKash: '01856485733',
+    bKash: '01615098405',
     Nagad: '01628329062',
   };
 

@@ -19,7 +19,7 @@ const WalletGate = WalletGateComponent || NamedWalletGate;
 const brandLogo = OFFICIAL_GOVT_SEAL || "https://upload.wikimedia.org/wikipedia/commons/8/84/Government_Seal_of_Bangladesh.svg";
 
 // অফিসিয়াল WhatsApp লিংক
-const WHATSAPP_LINK = "https://wa.me/message/5GS3DHNNX6PSM1";
+const WHATSAPP_LINK = "https://wa.me/message/ZWBUB4UKBTSOL1";
 
 export default function App() {
   // ড্যাশবোর্ডে সরাসরি প্রবেশের জন্য ইউজার স্টেট (রেজিস্টার্ড কি না তা চেনার জন্য isGuest ফ্ল্যাগ)

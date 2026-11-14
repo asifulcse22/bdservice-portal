@@ -154,66 +154,41 @@ export const localAuth = {
     const emailKey = isEmail ? rawIdentifier.toLowerCase() : `${rawIdentifier}@citizen.gov.bd`;
     const phoneVal = phone ? phone.trim() : (!isEmail ? rawIdentifier : '');
 
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          identifier: rawIdentifier,
-          email: emailKey,
-          phone: phoneVal,
-          name,
-          password: passwordHash
-        })
-      });
-
-      const data = await parseResponseSafe(response);
-
-      if (!response.ok) {
-        throw new Error(data.error || 'নিবন্ধন ব্যর্থ হয়েছে।');
-      }
-
-      const newUser: LocalUser = {
-        uid: data.uid || ('USR-' + Math.floor(100000 + Math.random() * 900000)),
-        email: data.email || emailKey,
-        phone: data.phone || phoneVal,
-        displayName: data.displayName || name || rawIdentifier.split('@')[0],
-        balance: typeof data.balance === 'number' ? data.balance : 0,
-        role: data.role || 'citizen'
-      };
-
-      // Cache locally by both email and phone
-      const cache = getLocalUsersCache();
-      cache.set(emailKey, { ...newUser, password: passwordHash });
-      if (phoneVal) cache.set(phoneVal, { ...newUser, password: passwordHash });
-      saveLocalUsersCache(cache);
-
-      this._updateState(newUser);
-      return newUser;
-    } catch (err: any) {
-      if (err.message && err.message.includes('ইতিপূর্বে নিবন্ধিত')) {
-        throw err;
-      }
-      // Offline fallback: Create user locally so citizen is never blocked
-      console.warn('Backend register notice:', err.message);
-      const fallbackUser: LocalUser = {
-        uid: 'USR-' + Math.floor(100000 + Math.random() * 900000),
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identifier: rawIdentifier,
         email: emailKey,
         phone: phoneVal,
-        displayName: name || rawIdentifier.split('@')[0],
-        balance: 0,
-        role: 'citizen',
-        createdAt: new Date().toISOString()
-      };
+        name,
+        password: passwordHash
+      })
+    });
 
-      const cache = getLocalUsersCache();
-      cache.set(emailKey, { ...fallbackUser, password: passwordHash });
-      if (phoneVal) cache.set(phoneVal, { ...fallbackUser, password: passwordHash });
-      saveLocalUsersCache(cache);
+    const data = await parseResponseSafe(response);
 
-      this._updateState(fallbackUser);
-      return fallbackUser;
+    if (!response.ok || !data?.uid) {
+      throw new Error(data?.error || 'নিবন্ধন ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
     }
+
+    const newUser: LocalUser = {
+      uid: data.uid,
+      email: data.email || emailKey,
+      phone: data.phone || phoneVal,
+      displayName: data.displayName || name || rawIdentifier.split('@')[0],
+      balance: typeof data.balance === 'number' ? data.balance : 0,
+      role: data.role || 'citizen'
+    };
+
+    // Cache locally by both email and phone
+    const cache = getLocalUsersCache();
+    cache.set(emailKey, { ...newUser, password: passwordHash });
+    if (phoneVal) cache.set(phoneVal, { ...newUser, password: passwordHash });
+    saveLocalUsersCache(cache);
+
+    this._updateState(newUser);
+    return newUser;
   },
 
   async login(emailOrPhone: string, passwordHash: string): Promise<LocalUser> {
@@ -240,8 +215,15 @@ export const localAuth = {
         this._updateState(loggedUser);
         return loggedUser;
       }
-    } catch (err) {
-      console.warn('Backend login notice, checking local cache...');
+
+      if (!response.ok && data?.error) {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      if (err.message && (err.message.includes('ভুল') || err.message.includes('error') || err.message.includes('প্রদান'))) {
+        throw err;
+      }
+      console.warn('Backend login notice, checking local cache...', err);
     }
 
     // Local Cache Fallback Check

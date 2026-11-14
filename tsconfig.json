@@ -22,5 +22,16 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "include": [
+    "src/**/*",
+    "worker.ts",
+    "functions/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "api",
+    "server.ts"
+  ]
 }

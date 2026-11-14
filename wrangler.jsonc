@@ -7,6 +7,9 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": true
+  },
+  "vars": {
+    "DATABASE_URL": "postgresql://neondb_owner:npg_w5jCgW2IunMt@ep-falling-bird-a12h83yq-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
   }
 }

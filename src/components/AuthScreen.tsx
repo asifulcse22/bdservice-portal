@@ -111,7 +111,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onAuthSuccess
     const isPhone = /^01[3-9]\d{8}$/.test(identifier);
 
     if (!isEmail && !isPhone) {
-      setErrorMessage('সঠিক ইমেইল অ্যাড্রেস (যেমন: name@mail.com) অথবা ১১-সংখ্যার মোবাইল নম্বর (যেমন: 01712345678) লিখুন।');
+      setErrorMessage('সঠিক ইমেইল অ্যাড্রেস (যেমন: name@mail.com) অথবা ১১-সংখ্যার মোবাইল নম্বর লিখুন।');
       return;
     }
 
@@ -304,7 +304,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onAuthSuccess
                 }}
                 className="text-[11px] font-bold text-purple-700 hover:text-purple-900 hover:underline cursor-pointer"
               >
-                পাসওয়ার্ড ভুলে গেছেন?
+                পাসওয়ার্ড কাজ না করলে পাসওয়ার্ড রিসেট দিন
               </button>
             </div>
             <div className="relative">

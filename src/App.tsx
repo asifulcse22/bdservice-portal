@@ -94,7 +94,6 @@ export default function App() {
       'sign-copy': 'Feather',
       'official_server_copy': 'ShieldAlert',
       'official-server-copy': 'ShieldAlert',
-      // আইডি কার্ড সংশোধনের আইকনসমূহ
       'nid-full-name-correction': 'Sliders',
       'nid-age-correction': 'Calendar',
       'nid-partial-name-correction': 'PenTool',
@@ -244,7 +243,6 @@ export default function App() {
 
   // সার্ভিস কার্ডে ক্লিক করার সময় রেজিস্ট্রেশন ও ব্যালেন্স চেক
   const handleServiceClick = (serviceItem: ServiceDefinition) => {
-    // ১. যদি ইউজার গেস্ট থাকে, তাহলে আগে রেজিস্ট্রেশন করতে বলা হবে
     if (currentUser.isGuest) {
       triggerToast(
         '🔒 একাউন্ট রেজিস্ট্রেশন প্রয়োজন',
@@ -254,7 +252,6 @@ export default function App() {
       return;
     }
 
-    // ২. ব্যালেন্স চেক
     const fee = serviceItem.fee ?? (serviceItem as any).price ?? 18;
     if (balance < fee) {
       triggerToast(
@@ -303,7 +300,6 @@ export default function App() {
         }
       }
 
-      // গেস্ট মোড / লোকাল স্টেট আপডেট
       const newBal = Math.max(0, balance - amount);
       setBalance(newBal);
       if (currentUser?.uid && !currentUser.isGuest) {
@@ -359,7 +355,6 @@ export default function App() {
         }
       }
 
-      // লোকাল ওয়ালেট আপডেট
       const newBal = balance + amount;
       setBalance(newBal);
       if (currentUser?.uid && !currentUser.isGuest) {
@@ -429,7 +424,6 @@ export default function App() {
     return true;
   };
 
-  // Auth Success Callback
   const handleAuthSuccess = async (user: any) => {
     const userBalance = typeof user.balance === 'number' && !isNaN(user.balance) ? user.balance : balance;
     const activeUser = {
@@ -457,8 +451,8 @@ export default function App() {
     }
   };
 
-  // Filter Services Logic (Safely checking title, banglaTitle, titleEn, description)
-  const filteredServices = SYSTEM_SERVICES.filter(service => {
+  // Unique key mapping for filtered services to prevent duplicate React key warnings
+  const filteredServices = SYSTEM_SERVICES.filter((service, index, self) => {
     const q = searchQuery.toLowerCase();
     const matchesSearch = 
       (service.title || '').toLowerCase().includes(q) || 
@@ -474,16 +468,16 @@ export default function App() {
       (selectedCategory === 'cert' && service.category === 'certificate') ||
       (selectedCategory === 'other' && service.category === 'others');
 
-    return matchesSearch && matchesCategory;
+    // Ensure uniqueness by ID in filtered result array
+    const isFirstOccurrence = self.findIndex(s => s.id === service.id) === index;
+    return matchesSearch && matchesCategory && isFirstOccurrence;
   });
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-tr from-purple-100 via-pink-50 to-purple-50 text-gray-800 font-sans pb-16 antialiased relative">
-      {/* Ambient Blur Sprites */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-300/30 rounded-full blur-3xl -z-10 pointer-events-none"></div>
       <div className="absolute bottom-0 right-1/4 w-[450px] h-[450px] bg-pink-300/25 rounded-full blur-3xl -z-10 pointer-events-none"></div>
 
-      {/* TOAST OVERLAY */}
       {toast && toast.show && (
         <div id="visual_toast" className="fixed top-6 right-6 z-50 p-4 rounded-2xl bg-white border-2 border-amber-400 shadow-2xl flex items-start gap-3 w-84 sm:w-96 animate-fade-in">
           <div className="p-2 bg-amber-50 text-amber-600 rounded-xl shrink-0 border border-amber-200">
@@ -516,7 +510,6 @@ export default function App() {
         </div>
       )}
 
-      {/* 🔐 AUTH MODAL POPUP (রেজিস্ট্রেশন ও লগইন উইন্ডো) */}
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in">
           <div className="relative w-full max-w-md">
@@ -538,11 +531,8 @@ export default function App() {
         </div>
       )}
 
-      {/* HEADER DESK NAVIGATION BAR */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row justify-between items-center gap-3.5">
-          
-          {/* Logo and National branding */}
           <div className="flex gap-3.5 items-center">
             <div className="p-1 bg-white rounded-xl transition-all hover:scale-105 duration-300">
               <div className="relative">
@@ -568,9 +558,7 @@ export default function App() {
             </div>
           </div>
  
-          {/* Status + Clock + WhatsApp Button + Wallet Desk + Auth Controls */}
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-2.5 sm:gap-3">
-            {/* Database status pill */}
             <div className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200/60 text-[10px] font-bold font-sans text-slate-700">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -579,13 +567,11 @@ export default function App() {
               <span>Neon Active Database</span>
             </div>
  
-            {/* Live Clock */}
             <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-200/60 text-[10px] text-slate-600 font-bold font-mono">
               <Clock size={11} className="text-slate-400" />
               <span>{currentTime.toLocaleTimeString()}</span>
             </div>
 
-            {/* 🟢 HEADER WHATSAPP BUTTON */}
             <a
               href={WHATSAPP_LINK}
               target="_blank"
@@ -607,9 +593,8 @@ export default function App() {
               <span>WhatsApp এ মেসেজ দিন</span>
             </a>
 
-             <AppDownloadButton variant="header" />
+            <AppDownloadButton variant="header" />
  
-            {/* 💳 Wallet Desk Button */}
             <div className="flex items-center gap-2">
               <button
                 id="wallet_access_btn"
@@ -638,7 +623,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* 👤 Registration & Login Controls */}
             {currentUser.isGuest ? (
               <div className="flex items-center gap-2">
                 <button
@@ -689,15 +673,11 @@ export default function App() {
               </div>
             )}
           </div>
-          
         </div>
       </header>
 
-      {/* CORE FRAMEWORK GRID VIEW */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
-        
         {isWalletViewActive ? (
-          /* STANDALONE DEDICATED WALLET PAGE */
           <div className="max-w-3xl mx-auto">
             <WalletGate 
               balance={balance} 
@@ -711,10 +691,8 @@ export default function App() {
             />
           </div>
         ) : (
-          /* PORTAL CONTROLS Workspace */
           <div className="w-full">
             {activeServiceId ? (
-              /* ACTIVE SERVICE HANDLER VIEW SCREEN */
               <ServiceViews 
                 activeServiceId={activeServiceId}
                 walletBalance={balance}
@@ -727,20 +705,14 @@ export default function App() {
                 }}
               />
             ) : (
-            /* SERVICE EXPLORER DASHBOARD */
             <div className="space-y-6">
-              
-              {/* JUMBOTRON GRAPHIC BANNER */}
               <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0c1329] via-[#101b34] to-[#16223f] p-6 sm:p-9 text-white shadow-xl shadow-slate-950/20 border border-slate-800">
-                <div 
-                  className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" 
-                />
+                <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
                 
                 <div className="absolute -right-16 -top-16 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-                  {/* Left Side Info Panel */}
                   <div className="lg:col-span-7 space-y-5">
                     <div className="flex flex-wrap gap-2.5 items-center">
                       <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-sky-200 text-[10px] font-mono leading-none border border-white/10 shadow-sm animate-pulse">
@@ -759,7 +731,6 @@ export default function App() {
                       বিল্ড করুন কাস্টম জন্ম নিবন্ধন রেকর্ড ও SMART আইডি যাচাইকরণ স্লিপ, সিম বায়োমেট্রিক ও মালিকানা রেকর্ড ডিটেইলস সহ উন্নত লোকেশন ও ডিভাইস সিকিউরিটি ট্র্যাকিং মডিউল।
                     </p>
                     
-                    {/* Dynamic Greeting & Registration Callout */}
                     <div className="flex flex-wrap items-center gap-3 pt-2">
                       <div className="flex items-center gap-2 bg-gradient-to-r from-sky-500/20 to-indigo-500/20 hover:from-sky-500/30 hover:to-indigo-500/30 border border-sky-500/30 py-1.5 px-3.5 rounded-xl text-xs text-sky-200 transition-all duration-300 shadow-sm backdrop-blur-md">
                         <Sparkles size={13} className="text-amber-300" />
@@ -779,7 +750,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Right Side Telemetry HUD Widget */}
                   <div className="lg:col-span-5 hidden lg:block">
                     <div className="p-5 rounded-2xl bg-[#090d1a]/85 backdrop-blur-md border border-slate-700/80 shadow-inner space-y-4">
                       <div className="flex justify-between items-center pb-2.5 border-b border-slate-800">
@@ -822,7 +792,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 📢 জরুরি নোটিশ / রেজিস্ট্রেশন ও ব্যালেন্স গাইড ব্যানার */}
               {showNoticeBanner && (
                 <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-emerald-500/15 border-2 border-amber-400 p-4 sm:p-5 shadow-md">
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -903,10 +872,8 @@ export default function App() {
                 </div>
               )}
 
-              {/* CONTROLS AREA (SEARCH & CATEGORIES Badges) */}
               <div className="flex flex-col gap-5 bg-white/80 backdrop-blur-md border border-purple-100/70 p-5 sm:p-6 rounded-3xl shadow-[0_12px_40px_-15px_rgba(124,58,237,0.06)]">
                 <div className="flex flex-col lg:flex-row gap-4 justify-between lg:items-center w-full">
-                  {/* Search Bar */}
                   <div className="relative flex items-center bg-purple-50/20 hover:bg-purple-50/40 border border-purple-100/80 hover:border-purple-200 rounded-2xl transition-all duration-300 w-full lg:w-96 shadow-sm focus-within:ring-2 focus-within:ring-purple-500/10 focus-within:border-purple-400 focus-within:bg-white">
                     <Search className="absolute left-4 text-purple-500" size={15} />
                     <input
@@ -929,14 +896,12 @@ export default function App() {
                     )}
                   </div>
                   
-                  {/* Category Status pill */}
                   <div className="inline-flex max-w-max items-center gap-2 text-[10px] font-extrabold text-purple-800 bg-purple-50 px-4 py-2 rounded-2xl border border-purple-200/40 uppercase tracking-widest font-mono shadow-sm">
                     <Layers size={11} className="text-purple-600 animate-pulse" />
                     <span>Service Categories / পরিসেবা ক্যাটাগরি</span>
                   </div>
                 </div>
 
-                {/* Categories Buttons */}
                 <div className="flex flex-wrap gap-2 w-full pt-1.5">
                   {[
                     { id: 'all', title: 'সকল সেবা', icon: <Layers size={12} />, gradient: 'from-purple-600 via-indigo-600 to-pink-500', shadow: 'rgba(124,58,237,0.22)', iconColor: 'text-purple-600' },
@@ -974,7 +939,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* MAIN SERVICES BENTO GRID */}
               <div>
                 <div className="flex justify-between items-center mb-4 text-xs font-bold text-gray-500 uppercase">
                   <span>Available Modules</span>
@@ -1127,7 +1091,7 @@ export default function App() {
 
                       return (
                         <div
-                          key={serviceItem.id}
+                          key={`service-item-${serviceItem.id}`}
                           id={`service_card_${serviceItem.id}`}
                           onClick={() => handleServiceClick(serviceItem)}
                           title={`${serviceItem.banglaTitle || serviceItem.title} — ${serviceItem.title}`}
@@ -1177,7 +1141,6 @@ export default function App() {
                             </p>
                           </div>
                           
-                          {/* Card action button with clear status */}
                           <div className="pt-3.5 border-t border-purple-50/75 mt-4 flex items-center justify-between text-[11px] font-extrabold text-purple-700 group-hover:text-purple-950 transition-colors">
                             {currentUser.isGuest ? (
                               <span className="flex items-center gap-1.5 font-bold text-indigo-700">
@@ -1211,14 +1174,11 @@ export default function App() {
        )}
       </main>
 
-      {/* FOOTER (With WhatsApp Support Button) */}
       <footer className="mt-28 relative overflow-hidden rounded-t-[3rem] border-t border-purple-100 bg-white shadow-[0_-20px_50px_rgba(124,58,237,0.03)]">
         <div className="absolute top-0 left-0 right-0 h-[5px] bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500" />
         
         <div className="max-w-7xl mx-auto px-6 sm:px-8 pt-16 pb-12 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8 pb-12 border-b border-purple-200/50">
-            
-            {/* Brand & Identity */}
             <div className="md:col-span-5 flex flex-col items-center md:items-start space-y-5 text-center md:text-left">
               <div className="flex items-center gap-4 group">
                 <div className="relative">
@@ -1247,7 +1207,6 @@ export default function App() {
               </p>
             </div>
 
-            {/* Directory Links */}
             <div className="md:col-span-3 flex flex-col items-center md:items-start space-y-4">
               <h4 className="font-extrabold text-[11px] uppercase text-purple-950 tracking-wider flex items-center gap-2">
                 <span className="w-1.5 h-3 bg-purple-600 rounded-full inline-block" />
@@ -1271,7 +1230,6 @@ export default function App() {
               </ul>
             </div>
 
-            {/* Security & Contact Panel */}
             <div className="md:col-span-4 flex flex-col items-center md:items-start space-y-4">
               <h4 className="font-extrabold text-[11px] uppercase text-purple-950 tracking-wider flex items-center gap-2">
                 <span className="w-1.5 h-3 bg-indigo-600 rounded-full inline-block" />
@@ -1284,7 +1242,6 @@ export default function App() {
                   <span>SYSTEM OPERATIONAL (AUTO-SECURE)</span>
                 </div>
 
-                {/* 🟢 FOOTER WHATSAPP BUTTON */}
                 <a
                   href={WHATSAPP_LINK}
                   target="_blank"
@@ -1310,7 +1267,6 @@ export default function App() {
 
           </div>
 
-          {/* Bottom Copyright */}
           <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] sm:text-[11px] font-mono font-extrabold text-gray-400 uppercase tracking-wider text-center md:text-left">
             <p className="text-gray-500">
               All Rights Reserved By BD Service Center © {new Date().getFullYear()}
